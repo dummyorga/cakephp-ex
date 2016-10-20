@@ -221,11 +221,11 @@
                     "value": "${OPCACHE_REVALIDATE_FREQ}"
                   }
                 ],
-		"resources": {
-		    "limits": {
-			"memory": "${MEMORY_LIMIT}"
-		    }
-		}
+        "resources": {
+            "limits": {
+            "memory": "${MEMORY_LIMIT}"
+            }
+        }
               }
             ]
           }
