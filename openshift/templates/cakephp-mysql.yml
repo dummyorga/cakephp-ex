@@ -1,0 +1,317 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes and load balances the application pods
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: cakephp-mysql-example
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: cakephp-mysql-example
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: cakephp-mysql-example
+  spec:
+    host: ""
+    to:
+      kind: Service
+      name: cakephp-mysql-example
+      weight: 100
+  status:
+    ingress: null
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: cakephp-mysql-example
+  spec: {}
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Defines how to build the application
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: cakephp-mysql-example
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: cakephp-mysql-example:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: https://github.com/openshift/cakephp-ex.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: COMPOSER_MIRROR
+        from:
+          kind: ImageStreamTag
+          name: php:5.6
+          namespace: openshift
+      type: Source
+    triggers:
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+    - github:
+        secret: 1VwF5UnkQuWuiWpnNUphXQgIibdjhpyWoHkC1UHX
+      type: GitHub
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: cakephp-mysql-example
+  spec:
+    replicas: 1
+    selector:
+      name: cakephp-mysql-example
+    strategy:
+      recreateParams:
+        pre:
+          execNewPod:
+            command:
+            - ./migrate-database.sh
+            containerName: cakephp-mysql-example
+          failurePolicy: Retry
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: cakephp-mysql-example
+          name: cakephp-mysql-example
+        name: cakephp-mysql-example
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: mysql
+          - name: DATABASE_ENGINE
+            value: mysql
+          - name: DATABASE_NAME
+            value: default
+          - name: DATABASE_USER
+            value: cakephp
+          - name: DATABASE_PASSWORD
+            value: E2Q76I1SmI7fTpWd
+          - name: CAKEPHP_SECRET_TOKEN
+            value: N3KUApHrsPyVkdCW1i3WOqxOATSKD8TolYdSq5jKdCDKmW1EU5
+          - name: CAKEPHP_SECURITY_SALT
+            value: 6nnx33tEIcOXP3a2OWlQoXAkceqiD2KI8dwvEi5q
+          - name: CAKEPHP_SECURITY_CIPHER_SEED
+            value: "312067835256571584618077520780"
+          - name: OPCACHE_REVALIDATE_FREQ
+            value: "2"
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+          name: cakephp-mysql-example
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health.php
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - cakephp-mysql-example
+        from:
+          kind: ImageStreamTag
+          name: cakephp-mysql-example:latest
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes the database server
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: mysql
+  spec:
+    ports:
+    - name: mysql
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+    selector:
+      name: mysql
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the database
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: cakephp-mysql-example
+      template: cakephp-mysql-example
+    name: mysql
+  spec:
+    replicas: 1
+    selector:
+      name: mysql
+    strategy:
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: cakephp-mysql-example
+          name: mysql
+        name: mysql
+      spec:
+        containers:
+        - env:
+          - name: MYSQL_USER
+            value: cakephp
+          - name: MYSQL_PASSWORD
+            value: E2Q76I1SmI7fTpWd
+          - name: MYSQL_DATABASE
+            value: default
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3306
+            timeoutSeconds: 1
+          name: mysql
+          ports:
+          - containerPort: 3306
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - MYSQL_PWD='E2Q76I1SmI7fTpWd' mysql -h 127.0.0.1 -u cakephp -D default
+                -e 'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: data
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mysql
+        from:
+          kind: ImageStreamTag
+          name: mysql:5.6
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status: {}
+kind: List
+metadata: {}
